@@ -1,10 +1,13 @@
+import os
+import time
+from dotenv import load_dotenv
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-from dotenv import load_dotenv
-import os
-import time
+
 
 load_dotenv()
 
@@ -12,60 +15,49 @@ EMAIL = os.getenv("NAUKRI_EMAIL")
 PASSWORD = os.getenv("NAUKRI_PASSWORD")
 
 
-def update_resume():
+def update_resume(resume_path):
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+
     driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install())
+        service=Service(ChromeDriverManager().install()),
+        options=chrome_options
     )
 
-    driver.maximize_window()
+    try:
+        print("Opening Naukri login page...")
 
-    driver.get("https://www.naukri.com/nlogin/login")
+        driver.get("https://www.naukri.com/nlogin/login")
 
-    time.sleep(3)
+        time.sleep(3)
 
-    driver.find_element(By.ID, "usernameField").send_keys(EMAIL)
-    driver.find_element(By.ID, "passwordField").send_keys(PASSWORD)
+        driver.find_element(By.ID, "usernameField").send_keys(EMAIL)
+        driver.find_element(By.ID, "passwordField").send_keys(PASSWORD)
 
-    driver.find_element(
-        By.XPATH,
-        "//button[text()='Login']"
-    ).click()
+        driver.find_element(By.XPATH, "//button[@type='submit']").click()
 
-    time.sleep(5)
+        print("Logged in...")
 
-    driver.get("https://www.naukri.com/mnjuser/profile")
+        time.sleep(5)
 
-    time.sleep(5)
+        driver.get("https://www.naukri.com/mnjuser/profile")
 
-    upload_btn = driver.find_element(
-        By.XPATH,
-        "//input[@type='file']"
-    )
+        time.sleep(5)
 
-    resume_folder = "resumes"
-    files = os.listdir(resume_folder)
+        upload_btn = driver.find_element(
+            By.XPATH,
+            "//input[@type='file']"
+        )
 
-    if not files:
-        print("No resume found")
-        driver.quit()
-        return
+        print(f"Uploading: {resume_path}")
 
-    latest_resume = files[0]
+        upload_btn.send_keys(os.path.abspath(resume_path))
 
-    resume_path = os.path.abspath(
-        os.path.join(resume_folder, latest_resume)
-    )
+        time.sleep(10)
 
-    print("Uploading:", resume_path)
+        print("Upload completed.")
 
-    upload_btn.send_keys(resume_path)
-
-    time.sleep(5)
-
-    print("Resume updated successfully!")
-
-    driver.quit()
-
-
-if __name__ == "__main__":
-    update_resume()
+    finally:
+        driver.quit()   
