@@ -1,15 +1,19 @@
 import os
 import json
+import io
+from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
-import io
+
+
+load_dotenv()
 
 
 def fetch_latest_resume():
     print("Downloading latest resume from Google Drive...")
 
-    # Load token from token.json
+    # Read token from token.json (NOT env variable)
     with open("token.json", "r") as f:
         token_data = json.load(f)
 
@@ -17,7 +21,6 @@ def fetch_latest_resume():
 
     service = build("drive", "v3", credentials=creds)
 
-    # Folder ID from .env
     folder_id = os.getenv("GOOGLE_FOLDER_ID")
 
     query = f"'{folder_id}' in parents and trashed=false"
@@ -32,7 +35,7 @@ def fetch_latest_resume():
     files = results.get("files", [])
 
     if not files:
-        raise Exception("No resume found in Google Drive folder.")
+        raise Exception("No files found in Google Drive folder")
 
     latest_file = files[0]
     file_id = latest_file["id"]
