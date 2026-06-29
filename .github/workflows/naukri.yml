@@ -18,10 +18,12 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install Chrome
+      - name: Install Chrome & XVFB
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb
+          sudo apt-get install -y xvfb wget unzip
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install -y ./google-chrome-stable_current_amd64.deb
 
       - name: Install dependencies
         run: |
@@ -31,7 +33,7 @@ jobs:
         run: |
           echo "NAUKRI_EMAIL=${{ secrets.NAUKRI_EMAIL }}" >> .env
           echo "NAUKRI_PASSWORD=${{ secrets.NAUKRI_PASSWORD }}" >> .env
-          echo "GOOGLE_DRIVE_FOLDER_ID=1mX8crYRfjGr-zV5zzM36IRPsMLXJGyKW" >> .env
+          echo "GOOGLE_FOLDER_ID=1mX8crYRfjGr-zV5zzM36IRPsMLXJGyKW" >> .env
 
       - name: Create credentials.json
         run: |
