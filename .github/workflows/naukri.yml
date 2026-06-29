@@ -1,0 +1,46 @@
+name: Naukri Auto Update
+
+on:
+  schedule:
+    - cron: '30 3 * * *'   # 9:00 AM IST
+  workflow_dispatch:
+
+jobs:
+  update-resume:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Install dependencies
+        run: |
+          pip install selenium webdriver-manager google-api-python-client google-auth google-auth-oauthlib python-dotenv
+
+      - name: Create .env
+        run: |
+          echo "NAUKRI_EMAIL=${{ secrets.NAUKRI_EMAIL }}" >> .env
+          echo "NAUKRI_PASSWORD=${{ secrets.NAUKRI_PASSWORD }}" >> .env
+          echo "GOOGLE_DRIVE_FOLDER_ID=1mX8crYRfjGr-zV5zzM36IRPsMLXJGyKW" >> .env
+
+      - name: Create credentials.json
+        run: |
+          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
+
+      - name: Create token.json
+        run: |
+          echo '${{ secrets.GOOGLE_TOKEN }}' > token.json
+
+      - name: Run automation
+        run: |
+          xvfb-run python main.py
