@@ -1,7 +1,5 @@
 import os
 import time
-from dotenv import load_dotenv
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -10,17 +8,21 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-load_dotenv()
 
 EMAIL = os.getenv("NAUKRI_EMAIL")
 PASSWORD = os.getenv("NAUKRI_PASSWORD")
 
 
 def update_resume(resume_path):
+    print("Opening Naukri login page...")
+
     options = Options()
-    options.add_argument("--headless")
+    options.binary_location = "/usr/bin/google-chrome"
+
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
 
     driver = webdriver.Chrome(
@@ -31,53 +33,50 @@ def update_resume(resume_path):
     wait = WebDriverWait(driver, 30)
 
     try:
-        print("Opening Naukri login page...")
         driver.get("https://www.naukri.com/nlogin/login")
-
-        time.sleep(10)
-
         print("Current URL:", driver.current_url)
         print("Page title:", driver.title)
 
-        # Save screenshot for debugging
-        driver.save_screenshot("debug.png")
-        print("Screenshot saved")
-
+        # Email field
         email_field = wait.until(
-            EC.presence_of_element_located(
-                (By.XPATH, "//input[@type='text']")
-            )
+            EC.presence_of_element_located((By.XPATH, '//input[contains(@placeholder,"Enter your active Email ID")]'))
         )
-
-        password_field = wait.until(
-            EC.presence_of_element_located(
-                (By.XPATH, "//input[@type='password']")
-            )
-        )
-
         email_field.send_keys(EMAIL)
+
+        # Password field
+        password_field = wait.until(
+            EC.presence_of_element_located((By.XPATH, '//input[contains(@placeholder,"Enter your password")]'))
+        )
         password_field.send_keys(PASSWORD)
 
-        login_btn = driver.find_element(
-            By.XPATH, "//button[contains(text(),'Login')]"
+        # Login button
+        login_button = wait.until(
+            EC.element_to_be_clickable((By.XPATH, '//button[contains(text(),"Login")]'))
         )
-        login_btn.click()
+        login_button.click()
 
+        print("Logged in successfully")
         time.sleep(5)
 
+        # Profile page
         driver.get("https://www.naukri.com/mnjuser/profile")
-
-        upload_btn = wait.until(
-            EC.presence_of_element_located(
-                (By.XPATH, "//input[@type='file']")
-            )
-        )
-
-        upload_btn.send_keys(os.path.abspath(resume_path))
-
         time.sleep(5)
 
-        print("Resume updated successfully!")
+        # Upload button
+        upload_input = wait.until(
+            EC.presence_of_element_located((By.XPATH, '//input[@type="file"]'))
+        )
+
+        upload_input.send_keys(os.path.abspath(resume_path))
+
+        print("Resume uploaded successfully")
+        time.sleep(5)
+
+    except Exception as e:
+        print("Error occurred:", e)
+        driver.save_screenshot("error.png")
+        print("Screenshot saved: error.png")
+        raise
 
     finally:
         driver.quit()
