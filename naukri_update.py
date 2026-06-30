@@ -1,9 +1,9 @@
 import os
 import time
-from selenium import webdriver
+import random
+import undetected_chromedriver as uc
+from fake_useragent import UserAgent
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -12,104 +12,97 @@ EMAIL = os.getenv("NAUKRI_EMAIL")
 PASSWORD = os.getenv("NAUKRI_PASSWORD")
 
 
+def human_type(element, text):
+    for ch in text:
+        element.send_keys(ch)
+        time.sleep(random.uniform(0.1, 0.3))
+
+
+def random_wait(a=2, b=5):
+    time.sleep(random.uniform(a, b))
+
+
 def update_resume(resume_path):
     print("Opening Naukri login page...")
 
-    options = Options()
+    ua = UserAgent()
 
-    # Railway Docker chromium path
+    options = uc.ChromeOptions()
     options.binary_location = "/usr/bin/chromium"
 
-    # Headless config
+    options.add_argument(f"--user-agent={ua.random}")
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
 
-    # Anti-bot flags
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_experimental_option(
-        "excludeSwitches", ["enable-automation"]
-    )
-    options.add_experimental_option(
-        "useAutomationExtension", False
-    )
-
-    # Use installed chromedriver from Docker
-    driver = webdriver.Chrome(
-        service=Service("/usr/bin/chromedriver"),
-        options=options
-    )
-
-    # Hide webdriver detection
-    driver.execute_script(
-        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+    driver = uc.Chrome(
+        options=options,
+        driver_executable_path="/usr/bin/chromedriver",
+        use_subprocess=False
     )
 
     wait = WebDriverWait(driver, 30)
 
     try:
-        # Open login page
         driver.get("https://www.naukri.com/nlogin/login")
 
         print("Current URL:", driver.current_url)
         print("Page title:", driver.title)
 
-        # Wait for email field
+        random_wait(3, 6)
+
+        # Random scroll like human
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight/3)")
+        random_wait(1, 3)
+
+        # Email field
         email_field = wait.until(
             EC.presence_of_element_located(
-                (
-                    By.XPATH,
-                    '//input[contains(@placeholder,"Enter your active Email ID")]'
-                )
+                (By.XPATH, '//input[contains(@placeholder,"Enter your active Email ID")]')
             )
         )
-        email_field.send_keys(EMAIL)
+        human_type(email_field, EMAIL)
+
+        random_wait(1, 2)
 
         # Password field
         password_field = wait.until(
             EC.presence_of_element_located(
-                (
-                    By.XPATH,
-                    '//input[contains(@placeholder,"Enter your password")]'
-                )
+                (By.XPATH, '//input[contains(@placeholder,"Enter your password")]')
             )
         )
-        password_field.send_keys(PASSWORD)
+        human_type(password_field, PASSWORD)
+
+        random_wait(1, 3)
 
         # Login button
         login_button = wait.until(
             EC.element_to_be_clickable(
-                (
-                    By.XPATH,
-                    '//button[contains(text(),"Login")]'
-                )
+                (By.XPATH, '//button[contains(text(),"Login")]')
             )
         )
         login_button.click()
 
         print("Logged in successfully")
-        time.sleep(5)
+        random_wait(5, 8)
 
-        # Open profile page
+        # Profile page
         driver.get("https://www.naukri.com/mnjuser/profile")
-        time.sleep(5)
+        random_wait(5, 8)
 
         # Upload resume
         upload_input = wait.until(
             EC.presence_of_element_located(
-                (
-                    By.XPATH,
-                    '//input[@type="file"]'
-                )
+                (By.XPATH, '//input[@type="file"]')
             )
         )
 
         upload_input.send_keys(os.path.abspath(resume_path))
 
         print("Resume uploaded successfully")
-        time.sleep(5)
+        random_wait(5, 8)
 
     except Exception as e:
         print("Error occurred:", e)
