@@ -16,54 +16,94 @@ def update_resume(resume_path):
     print("Opening Naukri login page...")
 
     options = Options()
+
+    # Railway Docker chromium path
     options.binary_location = "/usr/bin/chromium"
 
+    # Headless config
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
 
+    # Anti-bot flags
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option(
+        "excludeSwitches", ["enable-automation"]
+    )
+    options.add_experimental_option(
+        "useAutomationExtension", False
+    )
+
+    # Use installed chromedriver from Docker
     driver = webdriver.Chrome(
         service=Service("/usr/bin/chromedriver"),
         options=options
     )
 
+    # Hide webdriver detection
+    driver.execute_script(
+        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+    )
+
     wait = WebDriverWait(driver, 30)
 
     try:
+        # Open login page
         driver.get("https://www.naukri.com/nlogin/login")
+
         print("Current URL:", driver.current_url)
         print("Page title:", driver.title)
 
-        # Email field
+        # Wait for email field
         email_field = wait.until(
-            EC.presence_of_element_located((By.XPATH, '//input[contains(@placeholder,"Enter your active Email ID")]'))
+            EC.presence_of_element_located(
+                (
+                    By.XPATH,
+                    '//input[contains(@placeholder,"Enter your active Email ID")]'
+                )
+            )
         )
         email_field.send_keys(EMAIL)
 
         # Password field
         password_field = wait.until(
-            EC.presence_of_element_located((By.XPATH, '//input[contains(@placeholder,"Enter your password")]'))
+            EC.presence_of_element_located(
+                (
+                    By.XPATH,
+                    '//input[contains(@placeholder,"Enter your password")]'
+                )
+            )
         )
         password_field.send_keys(PASSWORD)
 
         # Login button
         login_button = wait.until(
-            EC.element_to_be_clickable((By.XPATH, '//button[contains(text(),"Login")]'))
+            EC.element_to_be_clickable(
+                (
+                    By.XPATH,
+                    '//button[contains(text(),"Login")]'
+                )
+            )
         )
         login_button.click()
 
         print("Logged in successfully")
         time.sleep(5)
 
-        # Profile page
+        # Open profile page
         driver.get("https://www.naukri.com/mnjuser/profile")
         time.sleep(5)
 
-        # Upload button
+        # Upload resume
         upload_input = wait.until(
-            EC.presence_of_element_located((By.XPATH, '//input[@type="file"]'))
+            EC.presence_of_element_located(
+                (
+                    By.XPATH,
+                    '//input[@type="file"]'
+                )
+            )
         )
 
         upload_input.send_keys(os.path.abspath(resume_path))
