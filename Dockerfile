@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     xvfb \
     libnss3 \
-    libgconf-2-4 \
     libxi6 \
     libgbm1 \
     libasound2 \
@@ -17,15 +16,13 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-0 \
     libxss1 \
     libx11-xcb1 \
-    fonts-liberation
+    fonts-liberation \
+    chromium \
+    chromium-driver
 
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
-RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
-
-RUN apt-get update && apt-get install -y google-chrome-stable
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-
-RUN pip install -r requirements.txt
 
 CMD ["python", "main.py"]
