@@ -1,11 +1,10 @@
 import os
 import json
-import io
 from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
-
+import io
 
 load_dotenv()
 
@@ -13,9 +12,8 @@ load_dotenv()
 def fetch_latest_resume():
     print("Downloading latest resume from Google Drive...")
 
-    # Read token from token.json (NOT env variable)
-    with open("token.json", "r") as f:
-        token_data = json.load(f)
+    # Read token directly from environment variable
+    token_data = json.loads(os.getenv("GOOGLE_TOKEN"))
 
     creds = Credentials.from_authorized_user_info(token_data)
 
@@ -43,16 +41,17 @@ def fetch_latest_resume():
 
     print(f"Latest file found: {file_name}")
 
+    # Create resumes directory if not exists
     os.makedirs("resumes", exist_ok=True)
-
-    request = service.files().get_media(fileId=file_id)
 
     file_path = os.path.join("resumes", file_name)
 
+    request = service.files().get_media(fileId=file_id)
+
     with io.FileIO(file_path, "wb") as fh:
         downloader = MediaIoBaseDownload(fh, request)
-
         done = False
+
         while not done:
             status, done = downloader.next_chunk()
             print(f"Download progress: {int(status.progress() * 100)}%")
